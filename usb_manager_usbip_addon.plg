@@ -38,15 +38,6 @@ rm -rf /usr/local/emhttp/plugins/&name;/* 2>/dev/null
 </FILE>
 
 <!--
-Get the plugin bundle.
--->
-<FILE Name="&packages;/&name;-&version;.txz">
-<URL>"&gitURL;/&name;-&version;.txz"</URL>
-<MD5>&MD5;</MD5>
-</FILE>
-
-
-<!--
 The 'post-install' script.
 -->
 <FILE Run="/bin/bash">
