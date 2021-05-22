@@ -1,0 +1,178 @@
+<?xml version='1.0' standalone='yes'?>
+
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "Usb_manager_usbip_addon">
+<!ENTITY author    "SimonFair">
+<!ENTITY version   "2021.06.01">
+<!ENTITY gitURL    "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/package">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/usb_manager_usbip_addon.plg">
+<!ENTITY supportURL	"https://forums.unraid.net/topic/100511-plugin-usbip-commands/">
+<!ENTITY packages	"/boot/config/plugins/&name;/package">
+<!ENTITY MD5		"d4f5bfbbd53b4cf54e7e5998d33c53a3">
+]>
+
+<PLUGIN name="&name;"
+		author="&author;"
+		version="&version;"
+		pluginURL="&pluginURL;"
+		support="&supportURL;"
+		icon="gear"
+		min="6.9.0-rc2">
+
+<CHANGES>
+##&name;
+###&version;
+01.06.2020
+
+- initial release.
+</CHANGES>
+
+<!--
+The 'pre-install' script.
+-->
+<FILE Run="/bin/bash">
+<INLINE>
+# Remove emhttp files so we can re-install.
+rm -rf /usr/local/emhttp/plugins/&name;/* 2>/dev/null
+</INLINE>
+</FILE>
+
+<!--
+Get the plugin bundle.
+-->
+<FILE Name="&packages;/&name;-&version;.txz">
+<URL>"&gitURL;/&name;-&version;.txz"</URL>
+<MD5>&MD5;</MD5>
+</FILE>
+
+
+<!--
+The 'post-install' script.
+-->
+<FILE Run="/bin/bash">
+<INLINE>
+# Define Functions
+
+download() {
+#Download usbip
+if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" "${DL_URL}/${PACKAGE}-1.txz" ; then
+  if [ "$(md5sum "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" | cut -d ' ' -f1)" != "$(wget -qO- "${DL_URL}/${PACKAGE}-1.txz.md5" | cut -d ' ' -f1)" ]; then
+    if [ -d &packages;/${KERNEL_V%%-*}/]; then
+      rm -rf &packages;/${KERNEL_V%%-*}/;
+    fi
+    echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
+    echo "--------------------------------CHECKSUM ERROR!---------------------------------"
+  fi
+  echo "-----------------Sucessfully downloaded usbip, please wait...!-----------------"
+else
+  echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
+  echo "----------------------------Can't download usbip--------------------------------"
+fi
+}
+
+check() {
+if [ ! -f "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
+  echo "+=============================================================================="
+  echo "| WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING"
+  echo "|"
+  echo "| Don't close this window with the red 'X' in the top right corner until the 'DONE' button is displayed!"
+  echo "|"
+  echo "| WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING"
+  echo "+=============================================================================="
+  echo "---------------------Downloading usbip, please wait...!------------------------"
+  echo "-----------This could take some time, please don't close this window!----------"
+  download
+elif [ ! -s "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
+  rm -rf &packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz
+  echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR-----"
+  echo "-----Download is empty please contact the developer of this plugin if the------"
+  echo "-------plugin has been already built against the current Kernel version--------"
+else
+  echo
+  echo "-----------------------------usbip found locally!------------------------------"
+fi
+}
+
+install() {
+#Install usbip package
+installpkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz"
+depmod -a > /dev/null
+}
+
+check_usbip_repo() {
+#Check if usbip is already downloaded
+
+if [ ! -z "$(modinfo usbip_host)" ]; then
+    echo "--------------------------usbip already installed...!--------------------------"
+else
+    check
+    echo "-----------------------Installing usbip, please wait...!-----------------------"
+    install 
+fi
+}
+
+#Define Variables
+
+KERNEL_V="$(uname -r)"
+PACKAGE="usbip"
+DL_URL="https://github.com/ich777/unraid-plugins-repo/releases/download/$KERNEL_V"
+
+# Install the plugin bundle.
+# Create plugin directory
+mkdir /boot/config/plugins/&name; 2>/dev/null
+mkdir /usr/local/emhttp/plugins/&name; 2>/dev/null
+mkdir -p /tmp/&name;/config 2>/dev/null
+
+if [ ! -d "&packages;/${KERNEL_V%%-*}" ]; then
+  mkdir -p "&packages;/${KERNEL_V%%-*}"
+fi
+
+# Load Package from ich777 repo for usbip modules and commands.
+check_usbip_repo
+
+
+echo 
+echo "-----------------------------------------------------------"
+echo " &name; has been installed."
+echo " "
+echo " Copyright 2016-2020, &author;"
+echo " Version: &version;"
+echo ""
+echo "-----------------------------------------------------------"
+echo 
+</INLINE>
+</FILE>
+
+<!--
+The 'remove' script.
+-->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+
+#Define Variables
+
+KERNEL_V="$(uname -r)"
+PACKAGE="usbip"
+
+# Remove installed packages
+find "&packages;/" -type f -iname "*.txz" -delete
+
+modprobe -r usbip_host
+modprobe -r vhci_hcd
+killall usbipd
+
+# Remove all plugin files from emhttp.
+removepkg &packages;/&name;-&version;.txz 
+removepkg "&packages;/&name;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz"
+depmod -a > /dev/null
+
+echo 
+echo "-----------------------------------------------------------"
+echo " &name; has been uninstalled."
+echo "-----------------------------------------------------------"
+echo 
+
+</INLINE>
+</FILE>
+
+</PLUGIN>
