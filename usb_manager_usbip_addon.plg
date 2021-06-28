@@ -53,11 +53,13 @@ if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KE
     fi
     echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
     echo "--------------------------------CHECKSUM ERROR!---------------------------------"
+    exit 1
   fi
   echo "-----------------Sucessfully downloaded usbip, please wait...!-----------------"
 else
   echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
   echo "----------------------------Can't download usbip--------------------------------"
+  exit 1
 fi
 }
 
@@ -78,6 +80,7 @@ elif [ ! -s "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
   echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR-----"
   echo "-----Download is empty please contact the developer of this plugin if the------"
   echo "-------plugin has been already built against the current Kernel version--------"
+  exit 1
 else
   echo
   echo "-----------------------------usbip found locally!------------------------------"
