@@ -108,9 +108,11 @@ fi
 #Define Variables
 
 KERNEL_V="$(uname -r)"
-PACKAGE="usbip"
-DL_URL="https://github.com/ich777/unraid-plugins-repo/releases/download/$KERNEL_V"
-
+#PACKAGE="usbip"
+PACKAGE="usbip-plugin-${KERNEL_V}"	
+#DL_URL="https://github.com/ich777/unraid-plugins-repo/releases/download/$KERNEL_V"
+DL_URL="https://github.com/SimonFair/USB_Manager_USBIP_addon/releases/download/$KERNEL_V"
+	
 # Install the plugin bundle.
 # Create plugin directory
 mkdir /boot/config/plugins/&name; 2>/dev/null
@@ -146,7 +148,8 @@ The 'remove' script.
 #Define Variables
 
 KERNEL_V="$(uname -r)"
-PACKAGE="usbip"
+#PACKAGE="usbip"
+PACKAGE="usbip-plugin-${KERNEL_V}"
 
 # Remove installed packages
 find "&packages;/" -type f -iname "*.txz" -delete
