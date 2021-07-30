@@ -6,7 +6,7 @@
 <!ENTITY version   "2021.06.01">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/package">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/usb_manager_usbip_addon.plg">
-<!ENTITY plugin    "/boot/config/plugins/usb_manager_usbip_addon">
+<!ENTITY plugin    "/boot/config/plugins/&name;">
 <!ENTITY supportURL	"https://forums.unraid.net/topic/100511-plugin-usb_managerusbip-commands-and-gui/?tab=comments#comment-927469">
 <!ENTITY packages	"/boot/config/plugins/&name;/package">
 <!ENTITY MD5		"d4f5bfbbd53b4cf54e7e5998d33c53a3">
