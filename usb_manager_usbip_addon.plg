@@ -45,6 +45,9 @@ The 'post-install' script.
 <INLINE>
 # Define Functions
 
+#Check for old packages
+rm -rf $(ls -d &plugin;/packages/* | grep -v "${KERNEL_V%%-*}")
+
 download() {
 #Download usbip
 if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" "${DL_URL}/${PACKAGE}-1.txz" ; then
