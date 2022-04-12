@@ -3,7 +3,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "Usb_manager_usbip_addon">
 <!ENTITY author    "SimonFair">
-<!ENTITY version   "2021.07.31">
+<!ENTITY version   "2022.04.12">
 <!ENTITY gitURL    "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/package">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/usb_manager_usbip_addon.plg">
 <!ENTITY plugin    "/boot/config/plugins/&name;">
@@ -21,13 +21,16 @@
 		min="6.9.0-rc2">
 
 <CHANGES>
-##&name;
-###&version;
+
+###2022.04.12
+- Removed warning message from console on boot
+
+###2021.07.31
 - Add Plugin-Update-Helper support
 
-01.06.2020
-
+###01.06.2020
 - initial release.
+
 </CHANGES>
 
 <!--
@@ -170,7 +173,7 @@ fi
 
 #Start Plugin Update Helper
 if [ -z "$(ps aux | grep -E "inotifywait -q /boot/changes.txt -e move_self,delete_self" | grep -v "grep -E inotifywait" | awk '{print $2}')" ]; then
-  echo "/usr/bin/plugin_update_helper" | at now
+  echo "/usr/bin/plugin_update_helper" | at now &gt; /dev/null 2&gt;&amp;1
 fi
 
 
