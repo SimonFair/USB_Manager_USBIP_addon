@@ -3,13 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "Usb_manager_usbip_addon">
 <!ENTITY author    "SimonFair">
-<!ENTITY version   "2022.04.12">
-<!ENTITY gitURL    "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/package">
+<!ENTITY version   "2022.07.17">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/usb_manager_usbip_addon.plg">
 <!ENTITY plugin    "/boot/config/plugins/&name;">
 <!ENTITY supportURL	"https://forums.unraid.net/topic/100511-plugin-usb_managerusbip-commands-and-gui/?tab=comments#comment-927469">
-<!ENTITY packages	"/boot/config/plugins/&name;/package">
-<!ENTITY MD5		"d4f5bfbbd53b4cf54e7e5998d33c53a3">
+<!ENTITY packages	"/boot/config/plugins/&name;/packages">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +19,10 @@
 		min="6.9.0-rc2">
 
 <CHANGES>
+
+###2022.07.17
+- Necessary changes for unRAID 6.11+
+- Cleanup
 
 ###2022.04.12
 - Removed warning message from console on boot
@@ -34,25 +36,13 @@
 </CHANGES>
 
 <!--
-The 'pre-install' script.
--->
-<FILE Run="/bin/bash">
-<INLINE>
-# Remove emhttp files so we can re-install.
-rm -rf /usr/local/emhttp/plugins/&name;/* 2>/dev/null
-</INLINE>
-</FILE>
-
-<!--
 The 'post-install' script.
 -->
 <FILE Run="/bin/bash">
 <INLINE>
-# Define Functions
-
 
 download() {
-#Download usbip
+# Download usbip
 if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" "${DL_URL}/${PACKAGE}-1.txz" ; then
   if [ "$(md5sum "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" | cut -d ' ' -f1)" != "$(wget -qO- "${DL_URL}/${PACKAGE}-1.txz.md5" | cut -d ' ' -f1)" ]; then
     if [ -d &packages;/${KERNEL_V%%-*}/]; then
@@ -60,17 +50,20 @@ if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KE
     fi
     echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
     echo "--------------------------------CHECKSUM ERROR!---------------------------------"
+    rm -rf &plugin;
     exit 1
   fi
   echo "-----------------Sucessfully downloaded usbip, please wait...!-----------------"
 else
   echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
   echo "----------------------------Can't download usbip--------------------------------"
+  rm -rf &plugin;
   exit 1
 fi
 }
 
 check() {
+# Check if packages are already downloaded or download maybe failed
 if [ ! -f "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
   echo "+=============================================================================="
   echo "| WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING"
@@ -90,53 +83,51 @@ elif [ ! -s "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
   exit 1
 else
   echo
+  echo
   echo "-----------------------------usbip found locally!------------------------------"
 fi
 }
 
 install() {
-#Install usbip package
+# Install usbip package
 installpkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz"
 depmod -a > /dev/null
 }
 
 check_usbip_repo() {
-#Check if usbip is already downloaded
-
-if [ ! -z "$(modinfo usbip_host)" ]; then
-    echo "--------------------------usbip already installed...!--------------------------"
-else
-    check
-    echo "-----------------------Installing usbip, please wait...!-----------------------"
-    install 
+# Check if usbip is already downloaded if not download and install it
+if ! modinfo usbip_host -0 >/dev/null 2>&amp;1 ; then
+  check
+  echo "-----------------------Installing usbip, please wait...!-----------------------"
+  install 
 fi
 }
 
-#Define Variables
-
+# Define Variables
 KERNEL_V="$(uname -r)"
-#PACKAGE="usbip"
 PACKAGE="usbip-plugin-${KERNEL_V}"	
-#DL_URL="https://github.com/ich777/unraid-plugins-repo/releases/download/$KERNEL_V"
 DL_URL="https://github.com/SimonFair/USB_Manager_USBIP_addon/releases/download/$KERNEL_V"
-	
- #Check for old packages
-rm -rf $(ls -d &plugin;/package/* | grep -v "${KERNEL_V%%-*}")
- 
-# Install the plugin bundle.
-# Create plugin directory
-mkdir /boot/config/plugins/&name; 2>/dev/null
-mkdir /usr/local/emhttp/plugins/&name; 2>/dev/null
-mkdir -p /tmp/&name;/config 2>/dev/null
 
+# Move old package directory to new package directory to be compliant with 6.11
+if [ -d &plugin;/package ]; then
+  mv &plugin;/package &packages;
+fi
+
+# Check for old packages
+rm -rf $(ls -d &packages;/* | grep -v "${KERNEL_V%%-*}")
+ 
+# Create plugin config directory and plugin directory
+if [ ! -d /tmp/&name;/config ]; then
+  mkdir -p /tmp/&name;/config 2>/dev/null
+fi
 if [ ! -d "&packages;/${KERNEL_V%%-*}" ]; then
   mkdir -p "&packages;/${KERNEL_V%%-*}"
 fi
 
-# Load Package from ich777 repo for usbip modules and commands.
+# Load Package from Releases tab for usbip modules and commands.
 check_usbip_repo
 
-#Check if Plugin Update Helper is downloaded and up-to-date
+# Check if Plugin Update Helper is downloaded and up-to-date
 if [ ! -f &plugin;/plugin_update_helper ]; then
   wget -q -T 5 -O &plugin;/plugin_update_helper "https://raw.githubusercontent.com/ich777/unraid-plugin_update_helper/master/plugin_update_helper"
 else
@@ -155,7 +146,7 @@ else
   fi
 fi
 
-#Check if Plugin Update Helper is installed and up to date
+# Check if Plugin Update Helper is installed and up to date
 if [ ! -f /usr/bin/plugin_update_helper ]; then
   cp &plugin;/plugin_update_helper /usr/bin/plugin_update_helper
   chmod +x /usr/bin/plugin_update_helper
@@ -171,7 +162,7 @@ else
   fi
 fi
 
-#Start Plugin Update Helper
+# Start Plugin Update Helper
 if [ -z "$(ps aux | grep -E "inotifywait -q /boot/changes.txt -e move_self,delete_self" | grep -v "grep -E inotifywait" | awk '{print $2}')" ]; then
   echo "/usr/bin/plugin_update_helper" | at now &gt; /dev/null 2&gt;&amp;1
 fi
@@ -181,7 +172,7 @@ echo
 echo "-----------------------------------------------------------"
 echo " &name; has been installed."
 echo " "
-echo " Copyright 2016-2020, &author;"
+echo " Copyright 2016-2022, &author;"
 echo " Version: &version;"
 echo ""
 echo "-----------------------------------------------------------"
@@ -195,23 +186,19 @@ The 'remove' script.
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
 
-#Define Variables
-
+# Define Variables
 KERNEL_V="$(uname -r)"
-#PACKAGE="usbip"
 PACKAGE="usbip-plugin-${KERNEL_V}"
 
-# Remove installed packages
-find "&packages;/" -type f -iname "*.txz" -delete
-
+# Remove modules from Kernel and stop usbipd
 modprobe -r usbip_host
 modprobe -r vhci_hcd
 killall usbipd
 
 # Remove all plugin files from emhttp.
-removepkg &packages;/&name;-&version;.txz 
-removepkg "&packages;/&name;/packages/${KERNEL_V%%-*}/${PACKAGE}-1.txz"
-depmod -a > /dev/null
+removepkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" >/dev/null 2>&amp;1
+rm -rf &plugin;
+depmod --quick >/dev/null 2>&amp;1
 
 echo 
 echo "-----------------------------------------------------------"
