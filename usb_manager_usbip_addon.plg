@@ -202,7 +202,7 @@ depmod --quick >/dev/null 2>&amp;1
 
 echo 
 echo "-----------------------------------------------------------"
-echo " &name; has been uninstalled, please restart your Server!"
+echo " &name; has been uninstalled."
 echo "-----------------------------------------------------------"
 echo 
 
