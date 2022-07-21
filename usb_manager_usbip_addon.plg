@@ -178,7 +178,7 @@ The 'remove' script.
 
 # Define Variables
 KERNEL_V="$(uname -r)"
-PACKAGE="usbip-plugin-${KERNEL_V}"
+PACKAGE="usbip"
 
 # Remove modules from Kernel and stop usbipd
 modprobe -r usbip_host
