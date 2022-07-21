@@ -186,7 +186,7 @@ modprobe -r vhci_hcd
 killall usbipd
 
 # Remove all plugin files from emhttp.
-removepkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" >/dev/null 2>&amp;1
+removepkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}*.txz" >/dev/null 2>&amp;1
 rm -rf &plugin;
 depmod --quick >/dev/null 2>&amp;1
 
