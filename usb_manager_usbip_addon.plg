@@ -3,7 +3,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "Usb_manager_usbip_addon">
 <!ENTITY author    "SimonFair">
-<!ENTITY version   "2022.07.17">
+<!ENTITY version   "2022.07.21">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/SimonFair/USB_Manager_USBIP_addon/main/usb_manager_usbip_addon.plg">
 <!ENTITY plugin    "/boot/config/plugins/&name;">
 <!ENTITY supportURL	"https://forums.unraid.net/topic/100511-plugin-usb_managerusbip-commands-and-gui/?tab=comments#comment-927469">
@@ -19,6 +19,10 @@
 		min="6.9.0-rc2">
 
 <CHANGES>
+
+###2022.07.21
+- Version detection from package via GitHub API
+- Save md5 in packages directory
 
 ###2022.07.17
 - Necessary changes for unRAID 6.11+
@@ -43,18 +47,19 @@ The 'post-install' script.
 
 download() {
 # Download usbip
-if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" "${DL_URL}/${PACKAGE}-1.txz" ; then
-  if [ "$(md5sum "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" | cut -d ' ' -f1)" != "$(wget -qO- "${DL_URL}/${PACKAGE}-1.txz.md5" | cut -d ' ' -f1)" ]; then
-    if [ -d &packages;/${KERNEL_V%%-*}/]; then
-      rm -rf &packages;/${KERNEL_V%%-*}/;
-    fi
+if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}" "${DL_URL}/${LAT_PACKAGE}" ; then
+  wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}.md5" "${DL_URL}/${LAT_PACKAGE}.md5"
+  if [ "$(md5sum &packages;/${KERNEL_V%%-*}/${LAT_PACKAGE} | awk '{print $1}')" != "$(cat &packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}.md5 | awk '{print $1}')" ]; then
+    echo
     echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
     echo "--------------------------------CHECKSUM ERROR!---------------------------------"
     rm -rf &plugin;
     exit 1
   fi
+  echo
   echo "-----------------Sucessfully downloaded usbip, please wait...!-----------------"
 else
+  echo
   echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
   echo "----------------------------Can't download usbip--------------------------------"
   rm -rf &plugin;
@@ -64,25 +69,13 @@ fi
 
 check() {
 # Check if packages are already downloaded or download maybe failed
-if [ ! -f "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
-  echo "+=============================================================================="
-  echo "| WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING"
-  echo "|"
-  echo "| Don't close this window with the red 'X' in the top right corner until the 'DONE' button is displayed!"
-  echo "|"
-  echo "| WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING - WARNING"
-  echo "+=============================================================================="
+if ! ls -1 &packages;/${KERNEL_V%%-*}/ | grep -q "${PACKAGE}" ; then
+  LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/SimonFair/USB_Manager_USBIP_addon/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V | tail -1)"
+  echo
   echo "---------------------Downloading usbip, please wait...!------------------------"
   echo "-----------This could take some time, please don't close this window!----------"
   download
-elif [ ! -s "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" ]; then
-  rm -rf &packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz
-  echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR-----"
-  echo "-----Download is empty please contact the developer of this plugin if the------"
-  echo "-------plugin has been already built against the current Kernel version--------"
-  exit 1
 else
-  echo
   echo
   echo "-----------------------------usbip found locally!------------------------------"
 fi
@@ -90,7 +83,7 @@ fi
 
 install() {
 # Install usbip package
-installpkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz"
+installpkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}*.txz"
 depmod -a > /dev/null
 }
 
@@ -99,13 +92,13 @@ check_usbip_repo() {
 if ! modinfo usbip_host -0 >/dev/null 2>&amp;1 ; then
   check
   echo "-----------------------Installing usbip, please wait...!-----------------------"
-  install 
+  install
 fi
 }
 
 # Define Variables
 KERNEL_V="$(uname -r)"
-PACKAGE="usbip-plugin-${KERNEL_V}"	
+PACKAGE="usbip"	
 DL_URL="https://github.com/SimonFair/USB_Manager_USBIP_addon/releases/download/$KERNEL_V"
 
 # Move old package directory to new package directory to be compliant with 6.11
@@ -116,10 +109,7 @@ fi
 # Check for old packages
 rm -rf $(ls -d &packages;/* | grep -v "${KERNEL_V%%-*}")
  
-# Create plugin config directory and plugin directory
-if [ ! -d /tmp/&name;/config ]; then
-  mkdir -p /tmp/&name;/config 2>/dev/null
-fi
+# Create plugin directory
 if [ ! -d "&packages;/${KERNEL_V%%-*}" ]; then
   mkdir -p "&packages;/${KERNEL_V%%-*}"
 fi
@@ -188,7 +178,7 @@ The 'remove' script.
 
 # Define Variables
 KERNEL_V="$(uname -r)"
-PACKAGE="usbip-plugin-${KERNEL_V}"
+PACKAGE="usbip"
 
 # Remove modules from Kernel and stop usbipd
 modprobe -r usbip_host
@@ -196,7 +186,7 @@ modprobe -r vhci_hcd
 killall usbipd
 
 # Remove all plugin files from emhttp.
-removepkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}-1.txz" >/dev/null 2>&amp;1
+removepkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}*.txz" >/dev/null 2>&amp;1
 rm -rf &plugin;
 depmod --quick >/dev/null 2>&amp;1
 
