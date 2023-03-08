@@ -89,7 +89,7 @@ depmod -a > /dev/null
 
 check_usbip_repo() {
 # Check if usbip is already downloaded if not download and install it
-if ! modinfo usbip_host -0 >/dev/null 2>&amp;1 ; then
+if [! -x "/usr/sbin/usbip" ]; then
   check
   echo "-----------------------Installing usbip, please wait...!-----------------------"
   install
